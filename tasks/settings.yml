@@ -17,8 +17,10 @@
     line: 'JENKINS_HOME={{ jenkins_home }}'
   register: jenkins_home_config
 
-- name: Immediately restart Jenkins on init config changes.
-  service: name=jenkins state=restarted
+- name: Immediately restart Jenkins on init config changes
+  service:
+    name: jenkins
+    state: restarted
   when: jenkins_init_prefix.changed
 
 - name: Set HTTP port in Jenkins config.
@@ -28,6 +30,13 @@
     regexp: '^{{ jenkins_http_port_param }}='
     line: '{{ jenkins_http_port_param }}={{ jenkins_http_port }}'
   register: jenkins_http_config
+
+- name: Add HTTPS port for Jenkins
+  lineinfile:
+    dest: "{{ jenkins_init_file }}"
+    regexp: "^JENKINS_HTTPS_PORT"
+    line: "JENKINS_HTTPS_PORT={{ jenkins_https_port }}"
+  when: add_https_port
 
 - name: Ensure jenkins_home {{ jenkins_home }} exists
   file:
@@ -49,7 +58,9 @@
   meta: flush_handlers
 
 - name: Immediately restart Jenkins on http or user changes.
-  service: name=jenkins state=restarted
+  service:
+    name: jenkins
+    state: restarted
   when: (jenkins_users_config is defined and jenkins_users_config.changed) or
         (jenkins_http_config is defined and jenkins_http_config.changed) or
         (jenkins_home_config is defined and jenkins_home_config.changed)

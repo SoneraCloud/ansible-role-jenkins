@@ -1,44 +1,37 @@
 ---
-- name: Ensure dependencies are installed.
-  apt:
-    name:
-      - curl
-      - apt-transport-https
-    state: installed
-
-- name: Add Jenkins apt repository key.
+- name: Add Jenkins apt repository key
   apt_key:
     url: "{{ jenkins_repo_key_url }}"
     state: present
 
-- name: Add Jenkins apt repository.
+- name: Add Jenkins apt repository
   apt_repository:
     repo: "{{ jenkins_repo_url }}"
     state: present
     update_cache: yes
-  when: jenkins_repo_url != ''
 
-- name: Download specific Jenkins version.
+- name: Download specific Jenkins version if needed
   get_url:
     url: "{{ jenkins_pkg_url }}/jenkins_{{ jenkins_version }}_all.deb"
     dest: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
   when: jenkins_version is defined
 
-- name: Check if we downloaded a specific version of Jenkins.
-  stat:
-    path: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
-  register: specific_version
-  when: jenkins_version is defined
-
-- name: Install our specific version of Jenkins.
+- name: Install specific version of Jenkins if needed
   apt:
     deb: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
     state: installed
-  when: jenkins_version is defined and specific_version.stat.exists
+  when: jenkins_version is defined
   notify: configure default users
 
-- name: Ensure Jenkins is installed.
+- name: Otherwise install Jenkins
   apt:
     name: jenkins
     state: "{{ jenkins_package_state }}"
-  notify: configure default users
+
+- name: Configure default users
+  template:
+    src: basic-security.groovy
+    dest: "{{ jenkins_basic_security_path }}"
+    owner: "{{ jenkins_process_user }}"
+    group: "{{ jenkins_process_group }}"
+    mode: 0775

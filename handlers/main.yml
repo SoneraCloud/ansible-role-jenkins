@@ -1,8 +1,32 @@
 ---
-- name: restart jenkins
-  service: name=jenkins state=restarted
+- name: Restart jenkins
+  service:
+    name: jenkins
+    state: restarted
+  listen:
+    - restart jenkins
 
-- name: configure default users
+- name: Wait for the https port to become open on the Jenkins host
+  wait_for:
+    port: "{{ https_port }}"
+  listen:
+    - restart jenkins
+    - wait for jenkins to restart
+
+- name: Wait for Jenkins to start before proceeding
+  uri:
+    url: "{{ jenkins_url }}/cli"
+    validate_certs: false
+    return_content: true
+  register: result
+  until:
+    - result | success
+    - "'Please wait' not in result.content"
+  listen:
+    - restart jenkins
+    - wait for jenkins to restart
+
+- name: Configure default users
   template:
     src: basic-security.groovy
     dest: "{{ jenkins_home }}/init.groovy.d/basic-security.groovy"
