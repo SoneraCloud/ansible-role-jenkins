@@ -21,7 +21,6 @@
     deb: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
     state: installed
   when: jenkins_version is defined
-  notify: configure default users
 
 - name: Otherwise install Jenkins
   apt:

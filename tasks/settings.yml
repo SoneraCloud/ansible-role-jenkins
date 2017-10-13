@@ -16,14 +16,9 @@
     regexp: '^JENKINS_HOME=.*'
     line: 'JENKINS_HOME={{ jenkins_home }}'
   register: jenkins_home_config
+  listen: restart jenkins
 
-- name: Immediately restart Jenkins on init config changes
-  service:
-    name: jenkins
-    state: restarted
-  when: jenkins_init_prefix.changed
-
-- name: Set HTTP port in Jenkins config.
+- name: Add HTTP port for Jenkins
   lineinfile:
     backrefs: yes
     dest: "{{ jenkins_init_file }}"
